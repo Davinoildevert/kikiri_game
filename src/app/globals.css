@@ -67,3 +67,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Délais d'animation personnalisés */
+.animation-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}

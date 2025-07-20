@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import GameHeader from "@/components/GameHeader";
 import GameBoard from "@/components/GameBoard";
@@ -9,7 +9,6 @@ import WinHistory from "@/components/WinHistory";
 import GameRules from "@/components/GameRules";
 import ConfettiEffect from "@/components/ConfettiEffect";
 import BackgroundParticles from "@/components/BackgroundParticles";
-import BettingTimer from "@/components/BettingTimer";
 import { useGameLogic } from "@/hooks/useGameLogic";
 
 interface Player {
@@ -47,25 +46,6 @@ export default function Home() {
     isOnline: true
   });
 
-  // Synchronise avec l'utilisateur connecté (localStorage)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const email = localStorage.getItem("casino_current_user");
-    if (!email) return;
-    const users = JSON.parse(localStorage.getItem("casino_users") || "{}");
-    const user = users[email];
-    if (user) {
-      setCurrentPlayer(prev => ({
-        ...prev,
-        name: user.pseudo,
-        balance: user.balance,
-        id: email,
-        // Ajoute avatar si besoin
-        avatar: user.avatar
-      }));
-    }
-  }, []);
-
   const [allPlayers, setAllPlayers] = useState<Player[]>([
     {
       id: 'player1',
@@ -87,8 +67,6 @@ export default function Home() {
   const [winningZone, setWinningZone] = useState<string | null>(null);
   const [diceResult, setDiceResult] = useState<DiceResult | null>(null);
   const [gameRoom, setGameRoom] = useState<string>('SALON-1');
-  const [bettingPhase, setBettingPhase] = useState(false);
-  const [canPlaceBets, setCanPlaceBets] = useState(false);
 
   const chipValues = [1, 5, 10, 25, 50, 100];
 
@@ -99,43 +77,16 @@ export default function Home() {
     setCurrentPlayer,
     setWinHistory,
     setWinningZone,
-    setShowConfetti,
-    () => {
-      // Callback appelé à la fin de chaque manche
-      setTimeout(() => {
-        setBettingPhase(false);
-        setCanPlaceBets(false); // Désactiver les mises jusqu'à la prochaine manche
-      }, 3000);
-    }
+    setShowConfetti
   );
 
   const handlePlaceBet = (zone: string) => {
-    if (!isSpinning && canPlaceBets) {
+    if (!isSpinning) {
       placeBet(zone, selectedChip);
     }
   };
 
   const handleSpinGame = () => {
-    if (!bettingPhase) {
-      // Démarrer la phase de mise avec message immédiat
-      toast({
-        title: "🎰 Nouvelle manche !",
-        description: "Vous avez 30 secondes pour placer vos mises",
-      });
-      setBettingPhase(true);
-      setCanPlaceBets(true);
-    }
-  };
-
-  const handleTimerStart = () => {
-    // Le timer démarre, pas besoin de message ici car déjà affiché
-    setCanPlaceBets(true);
-  };
-
-  const handleTimeUp = () => {
-    setCanPlaceBets(false);
-    setBettingPhase(false);
-    // Lancer immédiatement les dés après "Rien ne va plus" (sans délai)
     spinGame(setIsSpinning, setLastWin, setDiceResult);
   };
 
@@ -165,15 +116,6 @@ export default function Home() {
       />
 
       <main className="max-w-7xl mx-auto p-6 relative z-10">
-        {/* Timer de mise */}
-        <BettingTimer
-          isActive={bettingPhase}
-          onTimeUp={handleTimeUp}
-          onTimerStart={handleTimerStart}
-          bettingDuration={30}
-          className="mb-6"
-        />
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Plateau de jeu */}
           <GameBoard
@@ -189,8 +131,6 @@ export default function Home() {
             setSelectedChip={setSelectedChip}
             spinGame={handleSpinGame}
             getTotalBet={getTotalBet}
-            canPlaceBets={canPlaceBets}
-            bettingPhase={bettingPhase}
           />
 
           {/* Sidebar */}
